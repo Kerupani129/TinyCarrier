@@ -1,0 +1,66 @@
+#include "user32.as"
+
+// コンパイル設定
+#packopt hide 1
+
+// 定数
+/* ウィンドウメッセージ */
+#define WM_WINDOWPOSCHANGING 0x0046
+#define WM_NCLBUTTONDOWN     0x00A1
+#define WM_LBUTTONDOWN       0x0201
+
+/* その他 */
+#define HWND_BOTTOM 0x0001
+
+#define SWP_NOSIZE     0x0001
+#define SWP_NOMOVE     0x0002
+#define SWP_SHOWWINDOW 0x0040
+
+#define MK_LBUTTON 0x0001
+
+#define HTCAPTION 2
+
+// 
+// メイン
+// 
+	
+	// ウィンドウ生成
+	/* 基本 */
+	bgscr 0, 640, 480
+	
+	oncmd gosub *OnWindowPosChanging, WM_WINDOWPOSCHANGING
+	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
+	
+	SetWindowPos hwnd, HWND_BOTTOM, 0, 0, 0, 0, (SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE)
+	
+	/* デザイン */
+	color 0x00, 0x00, 0x00
+	boxf 10, 10, 630, 470
+	
+	stop
+
+// 
+// ウィンドウサイズ・位置・Z オーダーが変更された時
+// 
+*OnWindowPosChanging
+	
+	dupptr windowPos, lParam, 28, 4
+	
+	windowPos.1 = HWND_BOTTOM // windowPos.hwndInsertAfter = HWND_BOTTOM
+	
+	return
+
+// 
+// クライアント領域でマウス左ボタン押し下げ時
+// 
+*OnLButtonDown
+	
+	fwKeys =  wParam                  // キーフラグ
+	xPos   =  lParam & 0xFFFF         // カーソル X 座標
+	yPos   = (lParam >> 16) & 0xFFFF  // カーソル Y 座標
+	
+	if (fwKeys == MK_LBUTTON) {
+		sendmsg hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0
+	}
+	
+	return
