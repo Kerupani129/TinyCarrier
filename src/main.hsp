@@ -17,7 +17,9 @@
 
 #define SWP_NOSIZE     0x0001
 #define SWP_NOMOVE     0x0002
-#define SWP_SHOWWINDOW 0x0040
+#define SWP_NOZORDER   0x0004
+#define SWP_NOREDRAW   0x0008
+#define SWP_NOACTIVATE 0x0010
 
 #define MK_LBUTTON 0x0001
 
@@ -25,6 +27,7 @@
 
 // 変数
 dim hWndList, 2
+dim hBmpList, 1
 
 // 
 // メイン
@@ -53,7 +56,7 @@ dim hWndList, 2
 	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
 	oncmd gosub *OnDestroy          , WM_DESTROY
 	
-	SetWindowPos hWndList.0, HWND_BOTTOM, 0, 0, 0, 0, (SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE)
+	SetWindowPos hWndList.0, HWND_BOTTOM, 0, 0, 0, 0, (SWP_NOMOVE | SWP_NOSIZE)
 	
 	lbgscr_Update 0, 160, 320, hBmpList(0), -1, -1, 1
 	
@@ -83,6 +86,9 @@ dim hWndList, 2
 	
 	windowPos.1 = HWND_BOTTOM // windowPos.hwndInsertAfter = HWND_BOTTOM
 	
+	gsel 0
+	SetWindowPos hWndList.1, HWND_BOTTOM, ginfo_wx1 + 160, ginfo_wy1, 0, 0, (SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE)
+	
 	return
 
 // 
@@ -95,8 +101,7 @@ dim hWndList, 2
 	yPos   = (lParam >> 16) & 0xFFFF  // カーソル Y 座標
 	
 	if (fwKeys == MK_LBUTTON) {
-		gsel ginfo_act
-		sendmsg hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0
+		sendmsg hWndList(0), WM_NCLBUTTONDOWN, HTCAPTION, 0
 	}
 	
 	return
