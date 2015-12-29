@@ -1,10 +1,13 @@
 #include "user32.as"
 
+#include "mod_lbgscr.hsp"
+
 // コンパイル設定
 #packopt hide 1
 
 // 定数
 /* ウィンドウメッセージ */
+#define WM_DESTROY           0x0002
 #define WM_WINDOWPOSCHANGING 0x0046
 #define WM_NCLBUTTONDOWN     0x00A1
 #define WM_LBUTTONDOWN       0x0201
@@ -20,18 +23,50 @@
 
 #define HTCAPTION 2
 
+// 変数
+dim hWndList, 2
+
 // 
 // メイン
 // 
 	
+	// 画像準備
+	buffer 2, 320, 320
+	
+	color 0x00, 0x00, 0x00
+	boxf
+	
+	color 0xFF, 0xFF, 0xFF
+	circle 0, 0, 160, 160
+	circle 160, 0, 320, 160
+	circle 0, 160, 160, 320
+	circle 160, 160, 320, 320
+	
+	hBmpList(0) = lbgscr_CreateImage(2, 160, 320, 0, 0)
+	
 	// ウィンドウ生成
-	/* 基本 */
-	bgscr 0, 640, 480
+	/* 後ろのウィンドウ */
+	lbgscr 0, 160, 320, , -1, -1
+	hWndList.0 = hWnd
 	
 	oncmd gosub *OnWindowPosChanging, WM_WINDOWPOSCHANGING
 	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
+	oncmd gosub *OnDestroy          , WM_DESTROY
 	
-	SetWindowPos hwnd, HWND_BOTTOM, 0, 0, 0, 0, (SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE)
+	SetWindowPos hWndList.0, HWND_BOTTOM, 0, 0, 0, 0, (SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE)
+	
+	lbgscr_Update 0, 160, 320, hBmpList(0), -1, -1, 1
+	
+	/* 手前のウィンドウ */
+	lbgscr 1, 160, 320, , ginfo_wx1 + 160, ginfo_wy1
+	hWndList.1 = hWnd
+	
+	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
+	oncmd gosub *OnDestroy          , WM_DESTROY
+	
+	gsel 1, 2
+	
+	lbgscr_Update 1, 160, 320, hBmpList(0), -1, -1, 1
 	
 	/* デザイン */
 	color 0x00, 0x00, 0x00
@@ -60,7 +95,24 @@
 	yPos   = (lParam >> 16) & 0xFFFF  // カーソル Y 座標
 	
 	if (fwKeys == MK_LBUTTON) {
+		gsel ginfo_act
 		sendmsg hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0
 	}
+	
+	return
+
+// 
+// 終了処理
+// 
+*OnDestroy
+	
+	foreach hBmpList
+	
+		if (hBmpList(cnt) != 0) {
+			lbgscr_DeleteImage hBmpList(cnt)
+			hBmpList(cnt) = 0
+		}
+		
+	loop
 	
 	return
