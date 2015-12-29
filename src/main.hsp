@@ -9,6 +9,7 @@
 /* ウィンドウメッセージ */
 #define WM_DESTROY           0x0002
 #define WM_WINDOWPOSCHANGING 0x0046
+#define WM_WINDOWPOSCHANGED  0x0047
 #define WM_NCLBUTTONDOWN     0x00A1
 #define WM_LBUTTONDOWN       0x0201
 
@@ -53,6 +54,7 @@ dim hBmpList, 1
 	hWndList.0 = hWnd
 	
 	oncmd gosub *OnWindowPosChanging, WM_WINDOWPOSCHANGING
+	oncmd gosub *OnWindowPosChanged , WM_WINDOWPOSCHANGED
 	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
 	oncmd gosub *OnDestroy          , WM_DESTROY
 	
@@ -78,13 +80,20 @@ dim hBmpList, 1
 	stop
 
 // 
-// ウィンドウサイズ・位置・Z オーダーが変更された時
+// ウィンドウサイズ・位置・Z オーダーが変更している時
 // 
 *OnWindowPosChanging
 	
 	dupptr windowPos, lParam, 28, 4
 	
 	windowPos.1 = HWND_BOTTOM // windowPos.hwndInsertAfter = HWND_BOTTOM
+	
+	return
+
+// 
+// ウィンドウサイズ・位置・Z オーダーが変更された時
+// 
+*OnWindowPosChanged
 	
 	gsel 0
 	SetWindowPos hWndList.1, HWND_BOTTOM, ginfo_wx1 + 160, ginfo_wy1, 0, 0, (SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE)
