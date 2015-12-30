@@ -35,18 +35,36 @@ dim hBmpList, 1
 // 
 	
 	// 画像準備
-	buffer 2, 320, 320
+	buffer 2, 800, 1600
 	
-	color 0x00, 0x00, 0x00
-	boxf
+	pos 0, 0
+	picload "res/chima01b.bmp", 1
+	pos 400, 0
+	picload "res/chima01b.bmp", 1
+	pos 0, 800
+	picload "res/chima01f.bmp", 1
+	pos 400, 800
+	picload "res/chima01f.bmp", 1
 	
-	color 0xFF, 0xFF, 0xFF
-	circle 0, 0, 160, 160
-	circle 160, 0, 320, 160
-	circle 0, 160, 160, 320
-	circle 160, 160, 320, 320
-	
-	hBmpList(0) = lbgscr_CreateImage(2, 160, 320, 0, 0)
+	repeat 2
+		
+		id = cnt
+		
+		repeat 400
+			x = cnt
+			repeat 800
+				y = cnt
+				pget x + 400, y + 800 * id
+				if (ginfo_r != 0x00 || ginfo_g != 0x00 || ginfo_b != 0x00) {
+					color 0xFF, 0xFF, 0xFF
+					pset x + 400, y + 800 * id
+				}
+			loop
+		loop
+		
+		hBmpList(cnt) = lbgscr_CreateImage(2, 400, 800, 0, 800 * id)
+		
+	loop
 	
 	// ウィンドウ生成
 	/* 後ろのウィンドウ */
@@ -60,10 +78,10 @@ dim hBmpList, 1
 	
 	SetWindowPos hWndList.0, HWND_BOTTOM, 0, 0, 0, 0, (SWP_NOMOVE | SWP_NOSIZE)
 	
-	lbgscr_Update 0, 160, 320, hBmpList(0), -1, -1, 1
+	lbgscr_Update 0, 400, 800, hBmpList(0), -1, -1, 1
 	
 	/* 手前のウィンドウ */
-	lbgscr 1, 160, 320, , ginfo_wx1 + 160, ginfo_wy1
+	lbgscr 1, 160, 320, , ginfo_wx1, ginfo_wy1
 	hWndList.1 = hWnd
 	
 	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
@@ -71,11 +89,7 @@ dim hBmpList, 1
 	
 	gsel 1, 2
 	
-	lbgscr_Update 1, 160, 320, hBmpList(0), -1, -1, 1
-	
-	/* デザイン */
-	color 0x00, 0x00, 0x00
-	boxf 10, 10, 630, 470
+	lbgscr_Update 1, 400, 800, hBmpList(1), -1, -1, 1
 	
 	stop
 
@@ -96,7 +110,7 @@ dim hBmpList, 1
 *OnWindowPosChanged
 	
 	gsel 0
-	SetWindowPos hWndList.1, HWND_BOTTOM, ginfo_wx1 + 160, ginfo_wy1, 0, 0, (SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE)
+	SetWindowPos hWndList.1, HWND_BOTTOM, ginfo_wx1, ginfo_wy1, 0, 0, (SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE)
 	
 	return
 
