@@ -122,7 +122,7 @@
 	/* à íuÇÃï‚ê≥ */
 	dim mi, 10 // MONITORINFO ç\ë¢ëÃ
 	mi.0 = 10 * 4                     // mi.cbSize = sizeof(MONITORINFO)
-	MonitorFromPoint ptNormalPosition.0, ptNormalPosition.1, MONITOR_DEFAULTTOPRIMARY
+	MonitorFromWindow arg_hWnd, MONITOR_DEFAULTTOPRIMARY
 	GetMonitorInfo stat, varptr(mi)
 	ptNormalPosition.0 += mi.5 - mi.1 // ptNormalPosition.x += mi.rcWork.left - mi.rcMonitor.left
 	ptNormalPosition.1 += mi.6 - mi.2 // ptNormalPosition.y += mi.rcWork.top  - mi.rcMonitor.top
