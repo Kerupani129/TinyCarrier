@@ -1,146 +1,145 @@
 #include "user32.as"
+#include "kernel32.as"
 
-#include "mod_lbgscr.hsp"
+#uselib "psapi.dll"
+#func global EnumProcessModules "EnumProcessModules" sptr, sptr, sptr, sptr
+#func global GetModuleFileNameEx "GetModuleFileNameExA" sptr, sptr, sptr, sptr
+
+#include "mod_clbk2.hsp"
 
 // コンパイル設定
-#packopt hide 1
+#runtime "hsp3cl"
 
 // 定数
-/* ウィンドウメッセージ */
-#define WM_DESTROY           0x0002
-#define WM_WINDOWPOSCHANGING 0x0046
-#define WM_WINDOWPOSCHANGED  0x0047
-#define WM_NCLBUTTONDOWN     0x00A1
-#define WM_LBUTTONDOWN       0x0201
+#define NULL  0
+#define FALSE 0
+#define TRUE  1
 
-/* その他 */
-#define HWND_BOTTOM 0x0001
+#define _MAX_PATH 260
 
-#define SWP_NOSIZE     0x0001
-#define SWP_NOMOVE     0x0002
-#define SWP_NOZORDER   0x0004
-#define SWP_NOREDRAW   0x0008
-#define SWP_NOACTIVATE 0x0010
+#define GWL_STYLE   -16
+#define GWL_EXSTYLE -20
+#define GW_OWNER    0x00000004
 
-#define MK_LBUTTON 0x0001
+#define WS_VISIBLE                0x10000000
+#define WS_EX_TOOLWINDOW          0x00000080
+#define WS_EX_NOREDIRECTIONBITMAP 0x00200000
 
-#define HTCAPTION 2
+#define PROCESS_VM_READ           0x0010
+#define PROCESS_QUERY_INFORMATION 0x0400
 
-// 変数
-dim hWndList, 2
-dim hBmpList, 1
+#define MONITOR_DEFAULTTOPRIMARY 0x00000001
 
 // 
 // メイン
 // 
 	
-	// 画像準備
-	buffer 2, 800, 1600
-	
-	pos 0, 0
-	picload "res/chima01b.bmp", 1
-	pos 400, 0
-	picload "res/chima01b.bmp", 1
-	pos 0, 800
-	picload "res/chima01f.bmp", 1
-	pos 400, 800
-	picload "res/chima01f.bmp", 1
-	
-	repeat 2
-		
-		id = cnt
-		
-		repeat 400
-			x = cnt
-			repeat 800
-				y = cnt
-				pget x + 400, y + 800 * id
-				if (ginfo_r != 0x00 || ginfo_g != 0x00 || ginfo_b != 0x00) {
-					color 0xFF, 0xFF, 0xFF
-					pset x + 400, y + 800 * id
-				}
-			loop
-		loop
-		
-		hBmpList(cnt) = lbgscr_CreateImage(2, 400, 800, 0, 800 * id)
-		
-	loop
-	
-	// ウィンドウ生成
-	/* 後ろのウィンドウ */
-	lbgscr 0, 160, 320, , -1, -1
-	hWndList.0 = hWnd
-	
-	oncmd gosub *OnWindowPosChanging, WM_WINDOWPOSCHANGING
-	oncmd gosub *OnWindowPosChanged , WM_WINDOWPOSCHANGED
-	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
-	oncmd gosub *OnDestroy          , WM_DESTROY
-	
-	SetWindowPos hWndList.0, HWND_BOTTOM, 0, 0, 0, 0, (SWP_NOMOVE | SWP_NOSIZE)
-	
-	lbgscr_Update 0, 400, 800, hBmpList(0), -1, -1, 1
-	
-	/* 手前のウィンドウ */
-	lbgscr 1, 160, 320, , ginfo_wx1, ginfo_wy1
-	hWndList.1 = hWnd
-	
-	oncmd gosub *OnLButtonDown      , WM_LBUTTONDOWN
-	oncmd gosub *OnDestroy          , WM_DESTROY
-	
-	gsel 1, 2
-	
-	lbgscr_Update 1, 400, 800, hBmpList(1), -1, -1, 1
-	
+	labelptr clbk, 2, *ew
+	EnumWindows stat, 0
+
+	mes "\n取得数 : " + i + "\n"
+
 	stop
 
 // 
-// ウィンドウサイズ・位置・Z オーダーが変更している時
+// ウィンドウハンドル取得時のコールバック関数
 // 
-*OnWindowPosChanging
+*ew
 	
-	dupptr windowPos, lParam, 28, 4
+	// 引数
+	labelargv argv
 	
-	windowPos.1 = HWND_BOTTOM // windowPos.hwndInsertAfter = HWND_BOTTOM
+	arg_hWnd   = argv(0)
+	arg_lParam = argv(1)
 	
-	return
+	
+	// いらないものをはじく
+	/* ウィンドウスタイル・拡張スタイルを取得 */
+	GetWindowLong arg_hWnd, GWL_STYLE
+	style = stat
+    GetWindowLong arg_hWnd, GWL_EXSTYLE
+    exStyle = stat
+	
+	/* 可視状態かどうか */
+    if (0 == (style & WS_VISIBLE)) : return 1
+    if (0 != (exStyle & WS_EX_NOREDIRECTIONBITMAP)) : return 1
+    
+    /* タスクバーに表示されているかどうか */
+    if (0 != (exStyle & WS_EX_TOOLWINDOW)) : return 1
+    
+	/* オーナーウィンドウを持つかどうか */
+	GetWindow arg_hWnd, GW_OWNER
+	if (NULL != stat) : return 1
+	
+    
+	// タイトル取得
+	GetWindowTextLength arg_hWnd
+	len = stat
+	sdim text, len + 1
+	GetWindowText arg_hWnd, varptr(text), len + 1
 
-// 
-// ウィンドウサイズ・位置・Z オーダーが変更された時
-// 
-*OnWindowPosChanged
-	
-	gsel 0
-	SetWindowPos hWndList.1, HWND_BOTTOM, ginfo_wx1, ginfo_wy1, 0, 0, (SWP_NOSIZE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE)
-	
-	return
 
-// 
-// クライアント領域でマウス左ボタン押し下げ時
-// 
-*OnLButtonDown
-	
-	fwKeys =  wParam                  // キーフラグ
-	xPos   =  lParam & 0xFFFF         // カーソル X 座標
-	yPos   = (lParam >> 16) & 0xFFFF  // カーソル Y 座標
-	
-	if (fwKeys == MK_LBUTTON) {
-		sendmsg hWndList(0), WM_NCLBUTTONDOWN, HTCAPTION, 0
-	}
-	
-	return
+	// ファイルパス取得
+	/* プロセス ID 取得 */
+	processID = NULL
+	GetWindowThreadProcessId arg_hWnd, varptr(processID)
 
-// 
-// 終了処理
-// 
-*OnDestroy
+	/* プロセスハンドル 取得 */
+	OpenProcess PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID
+	hProcess = stat
+
+	/* モジュールハンドル 取得 */
+	hModule = NULL
+	EnumProcessModules hProcess, varptr(hModule), 4, NULL
+
+	/* ファイルパス 取得 */
+	sdim path, _MAX_PATH
+	GetModuleFileNameEx hProcess, hModule, varptr(path), _MAX_PATH
+
+
+	// ウィンドウの状態取得
+	IsIconic arg_hWnd
+	fIconic = stat
+	IsZoomed arg_hWnd
+	fZoomed = stat
+	IsWindowVisible arg_hWnd
+	fWindowVisible = stat
+	IsWindowEnabled arg_hWnd
+	fWindowEnabled = stat
 	
-	foreach hBmpList
 	
-		if (hBmpList(cnt) != 0) {
-			lbgscr_DeleteImage hBmpList(cnt)
-			hBmpList(cnt) = 0
-		}
-		
-	loop
+	// ウィンドウの位置・サイズ取得
+	/* ワークエリア内での座標 */
+	dim wndPl, 11 // WINDOWPLACEMENT 構造体
+	wndPl.0 = 4 * 11                                         // wndPl.length = sizeof(WINDOWPLACEMENT)
+	GetWindowPlacement arg_hWnd, varptr(wndPl)
+	ptNormalPosition = wndPl.7, wndPl.8                      // ptNormalPosition = wndPl.rcNormalPosition.left, wndPl.rcNormalPosition.top
+	ptNormalSize     = wndPl.9 - wndPl.7, wndPl.10 - wndPl.8 // ptNormalSize     = wndPl.rcNormalPosition.right - wndPl.rcNormalPosition.left, wndPl.rcNormalPosition.bottom - wndPl.rcNormalPosition.top
 	
-	return
+	/* 位置の補正 */
+	dim mi, 10 // MONITORINFO 構造体
+	mi.0 = 10 * 4                     // mi.cbSize = sizeof(MONITORINFO)
+	MonitorFromPoint ptNormalPosition.0, ptNormalPosition.1, MONITOR_DEFAULTTOPRIMARY
+	GetMonitorInfo stat, varptr(mi)
+	ptNormalPosition.0 += mi.5 - mi.1 // ptNormalPosition.x += mi.rcWork.left - mi.rcMonitor.left
+	ptNormalPosition.1 += mi.6 - mi.2 // ptNormalPosition.y += mi.rcWork.top  - mi.rcMonitor.top
+
+
+	// 表示
+	mes "hWnd : " + arg_hWnd
+	mes "text : " + text
+	mes "path : " + path
+	mes "IsIconic : " + fIconic
+	mes "IsZoomed : " + fZoomed
+	mes "IsWindowVisible : " + fWindowVisible
+	mes "IsWindowEnabled : " + fWindowEnabled
+	mes "ptNormalPosition : (" + ptNormalPosition.0 + ", " + ptNormalPosition.1 + ")"
+	mes "ptNormalSize     : (" + ptNormalSize.0 + ", " + ptNormalSize.1 + ")"
+	mes
+
+
+	// カウント
+	i++
+
+
+	return 1
