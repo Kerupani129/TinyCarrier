@@ -84,7 +84,7 @@
 	processID = NULL
 	GetWindowThreadProcessId arg_hWnd, varptr(processID)
 
-	/* プロセスハンドル 取得 */
+	/* プロセスを開く */
 	OpenProcess PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID
 	hProcess = stat
 
@@ -95,6 +95,9 @@
 	/* ファイルパス 取得 */
 	sdim path, _MAX_PATH
 	GetModuleFileNameEx hProcess, hModule, varptr(path), _MAX_PATH
+	
+	/* プロセスを閉じる */
+	CloseHandle hProcess
 
 
 	// ウィンドウの状態取得
