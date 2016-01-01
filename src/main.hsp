@@ -38,13 +38,13 @@ dim hBmpList, 1
 	buffer 2, 800, 1600
 	
 	pos 0, 0
-	picload "res/chima01b.bmp", 1
+	picload "res/chima02b.bmp", 1
 	pos 400, 0
-	picload "res/chima01b.bmp", 1
+	picload "res/chima02b.bmp", 1
 	pos 0, 800
-	picload "res/chima01f.bmp", 1
+	picload "res/chima02f.bmp", 1
 	pos 400, 800
-	picload "res/chima01f.bmp", 1
+	picload "res/chima02f.bmp", 1
 	
 	repeat 2
 		
